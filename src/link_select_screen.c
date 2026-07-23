@@ -997,7 +997,7 @@ static void Trade_Memcpy(void *dest, const void *src, size_t size)
         _dest[i] = _src[i];
 }
 
-bool8 ReducePlayerParty(void)
+static void CB_StartLinkBattle(void)
 {
     switch (sLinkBattleSelectScreen->ReducePartyState)
     {
@@ -1049,17 +1049,8 @@ bool8 ReducePlayerParty(void)
         sLinkBattleSelectScreen->ReducePartyState++;
         break;
     case 8:
-        return TRUE;
-    }
-
-    return FALSE;
-}
-
-static void CB_StartLinkBattle(void)
-{
-    if (ReducePlayerParty())
-    {
         gLinkType = LINKTYPE_BATTLE;
+        gTrainerBattleOpponent_A = TRAINER_LINK_OPPONENT;
         
         if (gLinkPlayers[0].trainerId & 1)
             PlayMapChosenOrBattleBGM(BGM_BATTLE_RSE_GYM_LEADER);
@@ -1077,9 +1068,11 @@ static void CB_StartLinkBattle(void)
             gBattleTypeFlags = BATTLE_TYPE_TRAINER | BATTLE_TYPE_LINK | BATTLE_TYPE_DOUBLE | BATTLE_TYPE_MULTI;
             break;
         }
-
+        sLinkBattleSelectScreen->ReducePartyState++;
+        break;
+    case 9:
         gMain.savedCallback = CB2_ReturnFromCableClubBattle;
-        gTrainerBattleOpponent_A = TRAINER_LINK_OPPONENT;
+        
         if (gWirelessCommType != 0)
         {
             // Wireless
