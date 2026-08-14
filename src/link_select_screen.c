@@ -1049,7 +1049,11 @@ static void CB_StartLinkBattle(void)
         sLinkBattleSelectScreen->ReducePartyState++;
         break;
     case 8:
+		u8 mpId = GetMultiplayerId();
         gLinkType = LINKTYPE_BATTLE;
+		gLinkPlayers[0].linkType = LINKTYPE_BATTLE;
+		gLinkPlayers[mpId].id = mpId;
+		gLinkPlayers[mpId ^ 1].id = mpId ^ 1;
         gTrainerBattleOpponent_A = TRAINER_LINK_OPPONENT;
         
         if (gLinkPlayers[0].trainerId & 1)
