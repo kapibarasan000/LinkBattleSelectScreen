@@ -1050,6 +1050,7 @@ static void CB_StartLinkBattle(void)
         break;
     case 8:
         gLinkType = LINKTYPE_BATTLE;
+		gLinkPlayers[0].linkType = LINKTYPE_BATTLE;
         gTrainerBattleOpponent_A = TRAINER_LINK_OPPONENT;
         
         if (gLinkPlayers[0].trainerId & 1)
@@ -1475,7 +1476,7 @@ static void CB_ProcessMenuInput(void)
                 AddTextPrinterParameterized(LS_WIN_OPTIONS, 2, gText_Select, 8, 2, 0xFF, NULL);
 
             AddTextPrinterParameterized(LS_WIN_OPTIONS, 2, gText_Summary, 8, 16, 0xFF, NULL);
-            Menu_InitCursor(LS_WIN_OPTIONS, 2, 0, 0, 16, 2, 0);
+            Menu_InitCursor(LS_WIN_OPTIONS, 2, 0, 2, 14, 2, 0);
             PutWindowTilemap(LS_WIN_OPTIONS);
             CopyWindowToVram(LS_WIN_OPTIONS, COPYWIN_BOTH);
             sLinkBattleSelectScreen->callbackId = CB_SELECTED_MON;
@@ -1846,9 +1847,13 @@ void Task_StartWiredLinkBattleSelectScreen(u8 taskId)
     }
 }
 
+#define tTimer data[1]
+
 void Task_StartWirelessLinkBattleSelectScreen(u8 taskId)
 {
     s16 *data = gTasks[taskId].data;
+    int i;
+
     switch (tState)
     {
     case 0:
@@ -1862,10 +1867,29 @@ void Task_StartWirelessLinkBattleSelectScreen(u8 taskId)
             tState++;
         break;
     case 2:
-        SetLinkStandbyCallback();
+        SendBlock(0, &gLocalLinkPlayer, sizeof(gLocalLinkPlayer));
         tState++;
         break;
     case 3:
+        if (GetBlockReceivedStatus() == GetLinkPlayerCountAsBitFlags())
+        {
+            for (i = 0; i < GetLinkPlayerCount(); i++)
+            {
+                gLinkPlayers[i] = *(struct LinkPlayer *)gBlockRecvBuffer[i];
+                ResetBlockReceivedFlag(i);
+            }
+            tState++;
+        }
+        break;
+    case 4:
+        if (++tTimer > 20)
+            tState++;
+        break;
+    case 5:
+        SetLinkStandbyCallback();
+        tState++;
+        break;
+    case 6:
         if (IsLinkTaskFinished())
         {
             CreateTask_CreateLinkBattleSelectScreen();
@@ -1874,6 +1898,8 @@ void Task_StartWirelessLinkBattleSelectScreen(u8 taskId)
         break;
     }
 }
+
+#undef tTimer
 
 void EnterColosseumPlayerSpot(void)
 {
